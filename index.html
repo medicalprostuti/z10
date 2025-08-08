@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>যুলোজি অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "ঘাসফড়িং-এর কোন গ্রন্থি থেকে জুভেনাইল হরমোন ক্ষরিত হয়?",
+          options: {
+            a: "কর্পোরা কার্ডিয়াকা",
+            b: "কর্পোরা অ্যালাটা",
+            c: "প্রোথোরাসিক গ্রন্থি",
+            d: "ইন্টারসেরিব্রাল গ্রন্থিকোষ",
+          },
+          correct: "b",
+          explanation:
+            "<p>ঘাসফড়িং-এর কর্পোরা অ্যালাটা (Corpora allata) নামক গ্রন্থি থেকে জুভেনাইল হরমোন (Juvenile hormone) ক্ষরিত হয়।</p><ul><li>এই হরমোন নিম্ফ দশার বৃদ্ধি ও খোলস মোচনে গুরুত্বপূর্ণ ভূমিকা পালন করে এবং পূর্ণাঙ্গ অবস্থায় প্রজনন অঙ্গের বিকাশ ঘটায়।</li></ul>",
+        },
+        {
+          id: 2,
+          question: "ঘাসফড়িংয়ের পুঞ্জাক্ষির কোন অংশটি আলো গ্রহণ করে?",
+          options: {
+            a: "কর্নিয়া",
+            b: "র‍্যাবডোম",
+            c: "কর্নিয়াজেন কোষ",
+            d: "ক্রিস্টালাইন কোণ কোষ",
+          },
+          correct: "b",
+          explanation:
+            "<p>ঘাসফড়িংয়ের পুঞ্জাক্ষির র‍্যাবডোম (Rhabdom) নামক অংশটি আলো গ্রহণ করে।</p><ul><li>এটি ওমাটিডিয়ামের কেন্দ্রীয় অংশ, যেখানে আলোকসংবেদী রঞ্জক পদার্থ থাকে এবং আলোকরশ্মিকে বৈদ্যুতিক সংকেতে রূপান্তরিত করে।</li></ul>",
+        },
+        {
+          id: 3,
+          question: "ওমাটিডিয়ামের কোন অংশ আলো প্রবেশে সাহায্য করে?",
+          options: {
+            a: "কর্নিয়া",
+            b: "ক্রিস্টালাইন কোণ কোষ",
+            c: "কর্নিয়াজেন কোষ",
+            d: "রেটিনুলার কোষ",
+          },
+          correct: "b",
+          explanation:
+            "<p>ওমাটিডিয়ামের কর্নিয়া (Cornea) হলো স্বচ্ছ বহিরাবরণ যা লেন্সের মতো কাজ করে এবং আলো প্রবেশে সাহায্য করে।</p><ul><li>এর নিচে থাকা ক্রিস্টালাইন কোণ এবং ক্রিস্টালাইন কোণ কোষগুলো আলোকে র‍্যাবডোমের দিকে ফোকাস করতে সাহায্য করে। প্রশ্নের অপশনগুলোর মধ্যে, কর্নিয়া হলো সরাসরি আলো প্রবেশের প্রথম ধাপ, আর ক্রিস্টালাইন কোণ কোষগুলো আলোর ফোকাসিংয়ে ভূমিকা রাখে। প্রদত্ত উত্তর অনুযায়ী 'b' সঠিক।</li></ul>",
+        },
+        {
+          id: 4,
+          question: "ভাস ডিফারেন্সিয়া কত খণ্ডকে মিলিত হয়?",
+          options: {
+            a: "৮ম",
+            b: "৯ম",
+            c: "৭ম",
+            d: "১০ম",
+          },
+          correct: "b",
+          explanation:
+            "<p>ঘাসফড়িংয়ের নবম উদরীয় খণ্ডকে (9th abdominal segment) দুটি ভাস ডিফারেন্সিয়া (Vas deferentia) মিলিত হয়ে ইজাকুলেটরি ডাক্ট (ejaculatory duct) গঠন করে।</p>",
+        },
+        {
+          id: 5,
+          question:
+            "ঘাসফড়িং নিম্ফ থেকে পূর্ণাঙ্গে পরিণত হতে কতবার খোলস ত্যাগ করে?",
+          options: {
+            a: "এক বার",
+            b: "তিন বার",
+            c: "পাঁচ বার",
+            d: "সাত বার",
+          },
+          correct: "c",
+          explanation:
+            "<p>ঘাসফড়িংয়ের জীবনচক্রে অসম্পূর্ণ রূপান্তর ঘটে।</p><ul><li>ডিম ফোটার পর নিম্ফ দশা শুরু হয়।</li><li>নিম্ফ (Nymph) দশা থেকে পূর্ণাঙ্গ ঘাসফড়িংয়ে (Imago) পরিণত হতে এটি পাঁচবার খোলস ত্যাগ করে। প্রতিটি খোলস ত্যাগের পর নিম্ফ কিছুটা বড় হয় এবং পূর্ণাঙ্গ পতঙ্গের বৈশিষ্ট্য অর্জন করে।</li></ul>",
+        },
+        {
+          id: 6,
+          question: "কোনটি ঘাসফড়িংয়ের পুংজননতন্ত্রের অংশ নয়?",
+          options: {
+            a: "শুক্রধানী",
+            b: "শুক্রাশয়",
+            c: "শুক্রনালি",
+            d: "শুক্রথলি",
+          },
+          correct: "a",
+          explanation:
+            "<p>শুক্রধানী (Spermatheca) হলো স্ত্রী ঘাসফড়িংয়ের জননতন্ত্রের একটি অংশ, যেখানে শুক্রাণু জমা হয়।</p><ul><li>শুক্রাশয় (Testis), শুক্রনালি (Vas deferens) এবং শুক্রথলি (Seminal vesicle) হলো পুরুষ ঘাসফড়িংয়ের জননতন্ত্রের অংশ।</li></ul>",
+        },
+        {
+          id: 7,
+          question: "ঘাসফড়িংয়ের সুপারপজিশন দর্শনে কোনটি সঠিক?",
+          options: {
+            a: "সুস্পষ্ট বিম্ব তৈরি হয়",
+            b: "বস্তুর খণ্ড খণ্ড বিম্ব তৈরি হয়",
+            c: "আইরিশ আবরণ সংকুচিত হয়",
+            d: "রেটিনাল আবরণ প্রসারিত হয়",
+          },
+          correct: "c",
+          explanation:
+            "<p>ঘাসফড়িংয়ের সুপারপজিশন দর্শন (Superposition vision) মৃদু বা স্তিমিত আলোতে ঘটে।</p><ul><li>এই পদ্ধতিতে আইরিশ রঞ্জক আবরণ (Iris pigment sheath) সংকুচিত হয়, যার ফলে আলোকরশ্মি বিভিন্ন ওমাটিডিয়াম থেকে র‍্যাবডোমে পতিত হতে পারে।</li><li>এর ফলে একটি অস্পষ্ট, ঝাপসা, এবং সম্মিলিত বিম্ব তৈরি হয়, যা রাতের বেলায় বা কম আলোতে দেখতে সহায়তা করে।</li></ul>",
+        },
+        {
+          id: 8,
+          question: "ওমাটিডিয়ামের কোন অংশ আলো প্রতিসরণে সাহায্য করে?",
+          options: {
+            a: "কর্নিয়া",
+            b: "কর্নিয়াজেন কোষ",
+            c: "রেটিনুলার কোষ",
+            d: "ক্রিস্টালাইন কোণ কোষ",
+          },
+          correct: "c",
+          explanation:
+            "<p>ওমাটিডিয়ামের কর্নিয়া (Cornea) এবং ক্রিস্টালাইন কোণ (Crystalline cone) আলো প্রতিসরণে প্রধান ভূমিকা রাখে।</p><ul><li>অপশনগুলোর মধ্যে, ক্রিস্টালাইন কোণ কোষ (Crystalline cone cell) পরোক্ষভাবে এই প্রক্রিয়ায় অংশ নেয় কারণ এটি ক্রিস্টালাইন কোণ গঠন করে। প্রদত্ত উত্তর অনুযায়ী 'c' সঠিক।</li></ul>",
+        },
+        {
+          id: 9,
+          question: "ওমাটিডিয়ামের কোন অংশ প্রতিবিম্ব গঠন করে?",
+          options: {
+            a: "কর্নিয়া",
+            b: "ক্রিস্টালাইন কোণ",
+            c: "রেটিনুলার কোষ",
+            d: "র‍্যাবডোম",
+          },
+          correct: "d",
+          explanation:
+            "<p>ওমাটিডিয়ামের র‍্যাবডোম (Rhabdom) নামক অংশটি আলো গ্রহণ করে এবং আলোকরশ্মিকে বৈদ্যুতিক সংকেতে রূপান্তরিত করে, যা মস্তিষ্কে প্রতিবিম্ব হিসেবে প্রক্রিয়াজাত হয়।</p><ul><li>সুতরাং, র‍্যাবডোমই মূলত প্রতিবিম্ব গঠনে প্রত্যক্ষভাবে জড়িত।</li></ul>",
+        },
+        {
+          id: 10,
+          question: "ঘাসফড়িংয়ের ওমাটিডিয়ামে কোন অংশটি লেন্সের মতো কাজ করে?",
+          options: {
+            a: "কর্নিয়া",
+            b: "কর্নিয়াজেন কোষ",
+            c: "আইরিশ রঞ্জক আবরণ",
+            d: "র‍্যাবডোম",
+          },
+          correct: "a",
+          explanation:
+            "<p>ঘাসফড়িংয়ের পুঞ্জাক্ষির প্রতিটি ওমাটিডিয়ামের কর্নিয়া (Cornea) হলো সবচেয়ে বাইরের স্বচ্ছ আবরণ, যা উত্তল লেন্সের মতো কাজ করে এবং আলোকরশ্মিকে ওমাটিডিয়ামের ভিতরে প্রবেশ করিয়ে ফোকাস করতে সাহায্য করে।</p>",
+        },
+        {
+          id: 11,
+          question: "ঘাসফড়িং-এর জীবনচক্রে নিচের কোন ক্রমটি সঠিক?",
+          options: {
+            a: "ডিম → লার্ভা → ইমোগো",
+            b: "ডিম → লার্ভা → পিউপা → ইমোগো",
+            c: "ডিম → নিম্ফ → ইমোগো",
+            d: "ডিম → লার্ভা → নিম্ফ → ইমোগো",
+          },
+          correct: "c",
+          explanation:
+            "<p>ঘাসফড়িংয়ের জীবনচক্রে অসম্পূর্ণ রূপান্তর (Incomplete metamorphosis) ঘটে।</p><ul><li>এর সঠিক ক্রম হলো ডিম (Egg) → নিম্ফ (Nymph) → ইমোগো/পূর্ণাঙ্গ ঘাসফড়িং (Imago/Adult Grasshopper)।</li><li>এখানে কোনো লার্ভা বা পিউপা দশা থাকে না।</li></ul>",
+        },
+        {
+          id: 12,
+          question: "সম্পূর্ণ রূপান্তরের ক্ষেত্রে নিচের কোনটি সঠিক?",
+          options: {
+            a: "ডিম → লার্ভা → পিউপা → ইমোগো",
+            b: "ডিম → পিউপা → লার্ভা → ইমোগো",
+            c: "লার্ভা → ডিম → পিউপা → ইমোগো",
+            d: "ইমোগো → ডিম → পিউপা → লার্ভা",
+          },
+          correct: "a",
+          explanation:
+            "<p>সম্পূর্ণ রূপান্তর (Complete metamorphosis) হলো পতঙ্গের জীবনচক্রের একটি পদ্ধতি যেখানে চারটি স্বতন্ত্র দশা থাকে।</p><ul><li>এর সঠিক ক্রম হলো ডিম (Egg) → লার্ভা (Larva) → পিউপা (Pupa) → ইমোগো/পূর্ণাঙ্গ পতঙ্গ (Imago/Adult Insect)।</li><li>প্রজাপতি, মৌমাছি, মশা ইত্যাদি পতঙ্গের জীবনচক্রে এই ধরনের রূপান্তর দেখা হয়।</li></ul>",
+        },
+        {
+          id: 13,
+          question: "ঘাসফড়িং-এর ওভিপজিটর কী কাজে ব্যবহৃত হয়?",
+          options: {
+            a: "লালা নিঃসরণে",
+            b: "বর্জ্য নিষ্কাশনে",
+            c: "শ্বসনকার্যে",
+            d: "ডিম্ব ত্যাগে",
+          },
+          correct: "d",
+          explanation:
+            "<p>ওভিপজিটর (Ovipositor) হলো স্ত্রী ঘাসফড়িংয়ের উদরের শেষ প্রান্তে অবস্থিত একটি বিশেষ অঙ্গ যা ডিম্ব ত্যাগে (Egg laying) ব্যবহৃত হয়।</p><ul><li>এর সাহায্যে ঘাসফড়িং মাটির নিচে গর্ত করে সেখানে ডিম পাড়ে।</li></ul>",
+        },
+        {
+          id: 14,
+          question: "ঘাসফড়িং-এর ডিম্বাণু কোন ধরনের?",
+          options: {
+            a: "সেমিসিথাল",
+            b: "এপিলেসিথাল",
+            c: "মায়োলেসিথাল",
+            d: "সেন্ট্রোলেসিথাল",
+          },
+          correct: "d",
+          explanation:
+            "<p>ঘাসফড়িং-এর ডিম্বাণু সেন্ট্রোলেসিথাল (Centrolecithal) প্রকৃতির।</p><ul><li>এই ধরনের ডিম্বাণুতে কুসুম বা ইয়োক (yolk) ডিম্বাণুর কেন্দ্রে জমা থাকে এবং সাইটোপ্লাজম কুসুমকে ঘিরে রাখে।</li></ul>",
+        },
+        {
+          id: 15,
+          question: "নিচের কোনটি ঘাসফড়িং-এর স্ত্রী জনন তন্ত্রের অংশ?",
+          options: {
+            a: "ভাস ডিফারেন্স",
+            b: "সেমিনাল ভেসিকল",
+            c: "স্পার্মাথিকা",
+            d: "ক্ষেপন নালি",
+          },
+          correct: "c",
+          explanation:
+            "<p>স্পার্মাথিকা (Spermatheca) হলো স্ত্রী ঘাসফড়িংয়ের জননতন্ত্রের একটি অংশ যা শুক্রাণু সংরক্ষণের জন্য ব্যবহৃত হয়।</p><ul><li>ভাস ডিফারেন্স, সেমিনাল ভেসিকল এবং ক্ষেপন নালি (ইজাকুলেটরি ডাক্ট) হলো পুরুষ জননতন্ত্রের অংশ।</li></ul>",
+        },
+        {
+          id: 16,
+          question: "ওভিপজিটর কততম খণ্ডকে অবস্থান করে?",
+          options: {
+            a: "৭ম",
+            b: "৮ম",
+            c: "৯ম",
+            d: "১০ম",
+          },
+          correct: "c",
+          explanation:
+            "<p>স্ত্রী ঘাসফড়িংয়ের নবম উদরীয় খণ্ডকে (9th abdominal segment) ওভিপজিটর (Ovipositor) অবস্থান করে।</p><ul><li>এটি ডিম পাড়ার জন্য বিশেষায়িত একটি অঙ্গ।</li></ul>",
+        },
+        {
+          id: 17,
+          question: "ঘাসফড়িং-এর প্রধান শ্রবণ অঙ্গ কোন খণ্ডকে অবস্থিত?",
+          options: {
+            a: "১ম বক্ষীয়",
+            b: "২য় বক্ষীয়",
+            c: "১ম উদরীয়",
+            d: "২য় উদরীয়",
+          },
+          correct: "c",
+          explanation:
+            "<p>ঘাসফড়িং-এর প্রধান শ্রবণ অঙ্গ টিমপ্যানাম (Tympanum) হলো প্রথম উদরীয় খণ্ডকে (1st abdominal segment) অবস্থিত।</p><ul><li>এটি একটি পাতলা পর্দাবিশিষ্ট অঙ্গ যা শব্দ তরঙ্গ গ্রহণ করে।</li></ul>",
+        },
+        {
+          id: 18,
+          question:
+            "ঘাসফড়িং-এর স্তিমিত আলোকে দর্শনের ক্ষেত্রে নিচের কোনটি প্রযোজ্য?",
+          options: {
+            a: "স্পষ্ট বিম্ব তৈরি করে",
+            b: "অ্যাপোজিশন বিম্ব তৈরি করে",
+            c: "উভয় আলোক রশ্মি গ্রহণ করে",
+            d: "রঞ্জক আবরণীদ্বয় প্রসারিত",
+          },
+          correct: "c",
+          explanation:
+            "<p>ঘাসফড়িংয়ের স্তিমিত আলোতে দর্শন (Superposition vision) ঘটে।</p><ul><li>এই ধরনের দর্শনে উভয় আলোক রশ্মি গ্রহণ করা হয়, অর্থাৎ প্রতিটি ওমাটিডিয়াম থেকে আগত আলোকরশ্মি পার্শ্ববর্তী ওমাটিডিয়ামের র‍্যাবডোমেও পতিত হতে পারে।</li><li>এর ফলে একটি সম্মিলিত কিন্তু অস্পষ্ট বিম্ব তৈরি হয়, যা কম আলোতে দেখতে সহায়তা করে। এই প্রক্রিয়ায় রঞ্জক আবরণীদ্বয় (আইরিশ ও রেটিনাল) প্রসারিত হয় (সংকুচিত নয়), যা আলোকে আরও সহজে প্রবেশ করতে দেয়। অ্যাপোজিশন বিম্ব দিনের বেলায় স্পষ্ট আলোতে তৈরি হয়।</li></ul>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+              <label class="option" data-option="${option}">
+                <div class="circle">${option}</div>
+                <span class="option-text">${question.options[option]}</span>
+              </label>
+            `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                 <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                 <div class="explanation-content">
+                   <div class="explanation-label">ব্যাখ্যা:</div>
+                   ${question.explanation}
+                 </div>
+               </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+            <p class="question-label">${index + 1}. ${question.question}</p>
+            <div class="options">
+              ${optionsHTML}
+            </div>
+            ${explanationHTML}
+          `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
